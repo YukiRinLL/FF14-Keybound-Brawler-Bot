@@ -1,0 +1,8 @@
+rapidocr-onnxruntime
+pyautogui
+pyperclip
+pygetwindow
+keyboard
+Pillow
+numpy
+interception
