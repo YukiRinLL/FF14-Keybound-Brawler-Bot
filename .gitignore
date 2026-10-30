@@ -8,10 +8,6 @@ _debug_*.png
 _shot_*.png
 *.screenshots/
 
-# 驱动安装包 (用户自行安装)
-interception_driver/
-interception_driver.zip
-
 # 系统文件
 .DS_Store
 Thumbs.db
