@@ -2,16 +2,16 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 
-:: Check admin
+:: Re-run as admin if not already
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [UAC] Requesting admin...
+    echo [UAC] Requesting admin privileges...
     powershell -Command "Start-Process '%~f0' -Verb RunAs"
     exit /b
 )
 
 echo ========================================
-echo   FFXIV Auto Typing Helper (Admin Mode)
+echo   FF14 Keybound Brawler Bot (Admin)
 echo ========================================
 echo.
 

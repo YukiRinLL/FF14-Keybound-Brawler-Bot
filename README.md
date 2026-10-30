@@ -1,93 +1,108 @@
 # FF14 Keybound Brawler Bot
 
-> FFXIV 魔光键影活动 OCR 自动打字发送辅助工具
+> FFXIV Keybound Brawler event helper -- OCR screen text recognition, fuzzy wordlist matching, automatic input and send.
 
-一个帮你在魔光键影活动里自动识别敌人头顶文字、自动打进聊天框发送的 Python 小工具。
+A small Python tool for the FFXIV Keybound Brawler event. It reads enemy overhead text via OCR, matches it against a wordlist, types it into the chat input, and presses Enter to send -- all in a loop.
 
-## ✨ 效果
+## Screenshots
 
-准备就绪 | 识别并发送
+Ready | Detecting and Sending
 :---: | :---:
 ![screenshot_ready](docs/screenshot_ready.png) | ![screenshot_sending](docs/screenshot_sending.png)
 
-## 🎯 它怎么工作
+## How it works
 
 ```
-截取游戏屏幕中央
-  → RapidOCR 识别敌人头顶文字
-  → 1210 条 FFXIV 词库模糊匹配
-  → 自动按 Enter 打开聊天框
-  → SendInput 注入中文
-  → 自动 Enter 发送
-  → 循环不停
+Grab game window screenshot
+  -> RapidOCR recognizes enemy overhead text (Chinese + punctuation)
+  -> Fuzzy match against 1210-entry FFXIV wordlist
+  -> Press Enter (scan code 0x1C) to open chat input
+  -> SendInput KEYEVENTF_UNICODE to inject characters
+  -> Press Enter again to send
+  -> Loop
 ```
 
-## 🚀 快速开始
+## Quick start
 
-### 1. 安装依赖
+### 1. Install dependencies
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-### 2. 以管理员身份运行（必须！）
+### 2. Run as Administrator (required)
 
-FFXIV 以管理员身份运行，Windows 的 UIPI 权限隔离会让非管理员进程的模拟按键被**静默丢弃**——看起来程序在跑，游戏里什么都没发生。
+FFXIV runs with Administrator privileges. Windows UIPI (User Interface Privilege Isolation) silently drops SendInput calls from lower-integrity processes. If you run Python without admin, the program will appear to work but nothing happens in-game.
 
-**右键 `启动_管理员.bat` → 以管理员身份运行**
+**Right-click `run_admin.bat` -> Run as Administrator**
 
-或者：
+Or from an elevated PowerShell / CMD:
 
 ```powershell
-# 管理员 CMD / PowerShell
 python main.py --autostart
 ```
 
-### 3. 进入魔光键影关卡后
+### 3. In the Keybound Brawler duty
 
-- **Alt+V** — 开始自动循环
-- **Shift+V** — 停止
-- **F8** — 切换悬浮窗透明度
+- **Alt+V** -- start the auto loop
+- **Shift+V** -- stop
+- **F8** -- toggle overlay transparency
 
-就不用管了，它会自动识别、自动打字、自动发送。
+That's it. It keeps recognizing and sending until you stop it.
 
-## ⚙️ 常用参数
+## CLI options
 
 ```powershell
-# 自定义循环间隔和发送次数
+# Custom interval and iteration limit
 python main.py --autostart --interval 2.0 --max-iterations 30
 
-# 指定 OCR 区域 (left top right bottom)
+# Manually specify the OCR region (left top right bottom)
 python main.py --region 600 400 1300 750
 
-# 自定义窗口标题关键词
-python main.py --window-title "最终幻想XIV"
+# Custom window title keyword
+python main.py --window-title "FFXIV"
 ```
 
-## 📦 项目结构
+| Option | Default | Description |
+|---|---|---|
+| `--region` | auto | OCR region `left top right bottom` |
+| `--window-title` | `最终幻想XIV` | Game window title keyword |
+| `--center-ratio` | `0.3` | Screen center area ratio for OCR |
+| `--interval` | `0.0` | Loop interval in seconds |
+| `--pause-between` | `0.08` | Pause between Enter / text / Enter |
+| `--max-iterations` | `0` (unlimited) | Max loop iterations |
+| `--autostart` | `False` | Auto-start the loop on launch |
+
+## Project structure
 
 ```
 FF14-Keybound-Brawler-Bot/
-├── main.py              # 悬浮窗主程序
-├── win_driver.py        # Interception 驱动注入封装
-├── win_keys.py          # SendInput 回退实现
-├── words.txt            # 1210 条 FFXIV 词汇
-├── docs/TECHNICAL.md    # 技术文档（架构、原理、踩坑记录）
+├── main.py              # Floating overlay + OCR + matching + input loop
+├── win_driver.py        # Interception driver-level injection wrapper
+├── win_keys.py          # SendInput fallback implementation
+├── words.txt            # 1210 FFXIV-specific vocabulary entries
+├── requirements.txt     # Python dependencies
+├── run_admin.bat        # One-click admin launcher
+├── diag_admin.bat       # Admin diagnostic script
+├── docs/
+│   ├── TECHNICAL.md         # Architecture, APIs, design notes
+│   ├── screenshot_ready.png
+│   └── screenshot_sending.png
 └── README.md
 ```
 
-## ⚠️ 注意事项
+## Caveats
 
-- **管理员权限** — 非管理员运行 = SendInput 被 UIPI 静默丢弃 = 游戏里什么都不发生
-- **窗口化/无边框** — 全屏独占时截图可能失败，建议设成窗口化最大化
-- **输入法** — 不需要手动切中文输入法，程序直接灌 Unicode 字符
+- **Admin required** -- non-admin run = SendInput silently dropped by UIPI = nothing happens in-game
+- **Windowed / Borderless** -- Fullscreen exclusive mode may fail to capture screenshots. Windowed maximized is recommended.
+- **No Chinese IME needed** -- SendInput KEYEVENTF_UNICODE injects raw Unicode code points directly, bypassing the IME entirely.
 
-## 🔧 技术细节 & 原理
+## Technical details
 
-想看底层实现、为什么 Interception 驱动需要重启、SendInput 的 ctypes 结构体到底怎么对齐的？
+Interception driver injection, SendInput ctypes struct alignment, UIPI mechanics, OCR pipeline, and a full pitfall log:
 
-👉 [docs/TECHNICAL.md](docs/TECHNICAL.md)
+> [docs/TECHNICAL.md](docs/TECHNICAL.md)
 
-## 📜 License
+## License
 
 MIT
