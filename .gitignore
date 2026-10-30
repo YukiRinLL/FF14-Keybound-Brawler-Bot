@@ -3,11 +3,9 @@ __pycache__/
 *.pyc
 *.pyo
 
-# 临时截图 / 调试
+# 临时调试截图 (非 docs 目录下的)
 _debug_*.png
 _shot_*.png
-image.png
-image1.png
 *.screenshots/
 
 # 驱动安装包 (用户自行安装)
